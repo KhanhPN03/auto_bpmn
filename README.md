@@ -5,14 +5,11 @@
 ![Auto BPMN Banner](https://img.shields.io/badge/Auto%20BPMN-AI%20Powered-blue?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjMDA3OEQ0Ii8+Cjwvc3ZnPgo=)
 
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](https://github.com/laza/auto-bpmn)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18.x-green)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18.x-blue)](https://reactjs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.x-green)](https://mongodb.com/)
 
 *Transform your business processes into professional BPMN diagrams with the power of AI*
-
-[Demo](https://auto-bpmn-demo.laza.dev) • [Documentation](https://docs.auto-bpmn.laza.dev) • [Report Bug](https://github.com/laza/auto-bpmn/issues) • [Request Feature](https://github.com/laza/auto-bpmn/issues)
 
 </div>
 
