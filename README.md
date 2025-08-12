@@ -401,12 +401,6 @@ Join our growing community of process optimization enthusiasts:
 
 ---
 
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
 ## 🙏 Acknowledgments
 
 Special thanks to:
@@ -420,12 +414,9 @@ Special thanks to:
 
 <div align="center">
 
-**🔮 Built with passion by [Laza](https://github.com/laza)**
+**🔮 Built with passion by [@KhanhPN03](https://github.com/KhanhPN03)**
 
 *Transforming business processes through intelligent automation*
-
-[![GitHub Stars](https://img.shields.io/github/stars/laza/auto-bpmn?style=social)](https://github.com/laza/auto-bpmn/stargazers)
-[![Twitter Follow](https://img.shields.io/twitter/follow/LaziDev?style=social)](https://twitter.com/LaziDev)
 
 **[⭐ Star this project](https://github.com/laza/auto-bpmn) • [🍴 Fork it](https://github.com/laza/auto-bpmn/fork) • [📢 Share it](https://twitter.com/intent/tweet?text=Check%20out%20Auto%20BPMN%20-%20AI-powered%20process%20modeling%20platform%20by%20@LaziDev&url=https://github.com/laza/auto-bpmn)**
 
