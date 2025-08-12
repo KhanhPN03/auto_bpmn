@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: auto_bpmn_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: auto_bpmn
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - auto_bpmn_network
+
+  # Backend Server
+  server:
+    build: ./server
+    container_name: auto_bpmn_server
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/auto_bpmn?authSource=admin
+      - JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+      - CLIENT_URL=http://localhost:3000
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - auto_bpmn_network
+
+  # Frontend Client
+  client:
+    build: ./client
+    container_name: auto_bpmn_client
+    restart: unless-stopped
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - auto_bpmn_network
+
+volumes:
+  mongodb_data:
+
+networks:
+  auto_bpmn_network:
+    driver: bridge
