@@ -73,6 +73,25 @@ const generateFromText = async (req, res) => {
 
   } catch (error) {
     console.error('Error generating BPMN from text:', error);
+    
+    // Specific error handling for rate limiting
+    if (error.message.includes('rate limit') || error.response?.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: 'API rate limit exceeded. Please wait a moment and try again.',
+        retryAfter: 60 // seconds
+      });
+    }
+    
+    // Handle API quota/billing issues
+    if (error.response?.status === 402 || error.message.includes('quota')) {
+      return res.status(402).json({
+        success: false,
+        message: 'API quota exceeded. Please check your OpenAI billing and usage.'
+      });
+    }
+    
+    // General server error
     res.status(500).json({
       success: false,
       message: 'Failed to generate BPMN diagram',

@@ -71,7 +71,7 @@ OPENAI_API_KEY=your_openai_api_key
 HUGGINGFACE_API_KEY=your_huggingface_api_key
 
 # Client URL (cập nhật với URL Vercel của bạn)
-CLIENT_URL=https://your-vercel-app-name.vercel.app
+CLIENT_URL=https://auto-bpmn-vercel.vercel.app
 
 # Optional
 RATE_LIMIT_WINDOW_MS=900000

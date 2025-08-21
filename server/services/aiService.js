@@ -47,7 +47,18 @@ Format your response as JSON:
     try {
       // Try OpenAI first
       if (this.openaiApiKey) {
-        return await this.callOpenAI(description, industry, 'generation');
+        try {
+          return await this.callOpenAI(description, industry, 'generation');
+        } catch (openaiError) {
+          console.error('OpenAI failed, trying HuggingFace fallback:', openaiError.message);
+          
+          // If OpenAI fails with rate limit, try HuggingFace as fallback
+          if (this.huggingfaceApiKey && (openaiError.message.includes('rate limit') || openaiError.response?.status === 429)) {
+            console.log('Falling back to HuggingFace due to OpenAI rate limit...');
+            return await this.callHuggingFace(description, industry, 'generation');
+          }
+          throw openaiError;
+        }
       }
 
       // Fallback to HuggingFace
@@ -101,28 +112,52 @@ Format your response as JSON:
       .replace('{description}', description)
       .replace('{industry}', industry);
 
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a BPMN expert that generates valid BPMN 2.0 XML.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      max_tokens: 2000,
-      temperature: 0.3
-    }, {
-      headers: {
-        'Authorization': `Bearer ${this.openaiApiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    // Retry logic for rate limiting
+    let retryCount = 0;
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
 
-    return this.extractBpmnFromResponse(response.data.choices[0].message.content);
+    while (retryCount < maxRetries) {
+      try {
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+          model: 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a BPMN expert that generates valid BPMN 2.0 XML.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.3
+        }, {
+          headers: {
+            'Authorization': `Bearer ${this.openaiApiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        return this.extractBpmnFromResponse(response.data.choices[0].message.content);
+      } catch (error) {
+        console.error(`OpenAI API attempt ${retryCount + 1} failed:`, error.response?.status, error.response?.data);
+        
+        if (error.response?.status === 429) {
+          retryCount++;
+          if (retryCount < maxRetries) {
+            const delay = baseDelay * Math.pow(2, retryCount - 1); // Exponential backoff
+            console.log(`Rate limited. Retrying in ${delay}ms... (attempt ${retryCount}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          } else {
+            throw new Error('OpenAI API rate limit exceeded. Please try again later or check your API quota.');
+          }
+        } else {
+          throw error; // Re-throw non-rate-limit errors
+        }
+      }
+    }
   }
 
   async callOpenAIForOptimization(prompt) {
