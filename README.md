@@ -34,6 +34,34 @@
 
 ---
 
+## 🚀 Quick Deployment (Free Tier)
+
+### Production Architecture
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend       │    │   Database      │
+│   (React/Vite)  │◄──►│   (Node.js)     │◄──►│   (MongoDB)     │
+│   Vercel        │    │   Render        │    │   Atlas         │
+│   FREE          │    │   FREE 750h     │    │   FREE 512MB    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### 🎯 Deploy in 5 Minutes
+1. **Frontend**: Deploy to Vercel (Unlimited free static hosting)
+2. **Backend**: Deploy to Render (750 hours/month free)  
+3. **Database**: MongoDB Atlas (512MB free tier)
+
+👉 **[📖 Complete Deployment Guide](./DEPLOYMENT.md)** - Chi tiết từng bước với Free Tier
+
+```bash
+# Health check your deployment
+./check-deployment.sh [vercel-url] [render-url]
+```
+
+**🏆 Total Cost: $0/month** (Free tier cho production app!)
+
+---
+
 ## 🎯 Features
 
 <table>

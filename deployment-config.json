@@ -1,0 +1,167 @@
+{
+  "name": "auto-bpmn-deployment",
+  "version": "1.0.0",
+  "description": "Auto BPMN Deployment Configuration",
+  "deployment": {
+    "frontend": {
+      "platform": "vercel",
+      "framework": "vite",
+      "rootDirectory": "client",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist",
+      "environmentVariables": {
+        "VITE_API_URL": "https://your-render-app-name.onrender.com/api"
+      },
+      "features": {
+        "customDomain": true,
+        "autoRedeploy": true,
+        "analytics": true
+      }
+    },
+    "backend": {
+      "platform": "render",
+      "environment": "node",
+      "rootDirectory": "server",
+      "buildCommand": "npm install",
+      "startCommand": "npm start",
+      "environmentVariables": {
+        "NODE_ENV": "production",
+        "MONGODB_URI": "mongodb+srv://username:password@cluster.mongodb.net/auto_bpmn",
+        "JWT_SECRET": "your_super_secure_jwt_secret_minimum_32_characters",
+        "OPENAI_API_KEY": "your_openai_api_key",
+        "HUGGINGFACE_API_KEY": "your_huggingface_api_key",
+        "CLIENT_URL": "https://your-vercel-app-name.vercel.app",
+        "RATE_LIMIT_WINDOW_MS": "900000",
+        "RATE_LIMIT_MAX_REQUESTS": "100",
+        "MAX_FILE_SIZE": "10485760"
+      },
+      "features": {
+        "autoSleep": true,
+        "healthCheck": "/api/health",
+        "region": "oregon"
+      }
+    },
+    "database": {
+      "platform": "mongodb-atlas",
+      "tier": "M0",
+      "region": "closest",
+      "features": {
+        "freeCluster": true,
+        "backups": false,
+        "monitoring": "basic"
+      }
+    }
+  },
+  "costs": {
+    "monthly": {
+      "vercel": "$0",
+      "render": "$0 (750h free)",
+      "mongodb": "$0 (512MB free)",
+      "total": "$0"
+    },
+    "limits": {
+      "vercel": "100GB bandwidth/month",
+      "render": "750 compute hours/month, sleeps after 15min",
+      "mongodb": "512MB storage, shared cluster"
+    }
+  },
+  "healthChecks": {
+    "frontend": "https://your-app.vercel.app",
+    "backend": "https://your-app.onrender.com/api/health",
+    "database": "via backend connection"
+  },
+  "documentation": {
+    "deployment": "./DEPLOYMENT.md",
+    "troubleshooting": "./DEPLOYMENT.md#troubleshooting",
+    "healthCheck": "./check-deployment.sh"
+  },
+  "requirements": {
+    "accounts": [
+      "GitHub (for repositories)",
+      "Vercel (frontend deployment)",
+      "Render (backend deployment)", 
+      "MongoDB Atlas (database)",
+      "OpenAI or HuggingFace (AI APIs)"
+    ],
+    "minimumSpecs": {
+      "node": ">=18.0.0",
+      "npm": ">=8.0.0",
+      "storage": "1GB (including dependencies)"
+    }
+  },
+  "deployment_steps": [
+    {
+      "step": 1,
+      "title": "Prepare Repository",
+      "commands": [
+        "git add .",
+        "git commit -m 'Prepare for deployment'",
+        "git push origin main"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Setup MongoDB Atlas",
+      "actions": [
+        "Create free M0 cluster",
+        "Create database user", 
+        "Whitelist IP addresses",
+        "Get connection string"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Deploy Backend (Render)",
+      "actions": [
+        "Connect GitHub repository",
+        "Configure build/start commands",
+        "Set environment variables",
+        "Deploy and get URL"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Deploy Frontend (Vercel)",
+      "actions": [
+        "Connect GitHub repository",
+        "Set build configuration",
+        "Add backend URL to env vars",
+        "Deploy and get URL"
+      ]
+    },
+    {
+      "step": 5,
+      "title": "Cross-Configure URLs",
+      "actions": [
+        "Update CLIENT_URL in Render",
+        "Update VITE_API_URL in Vercel",
+        "Redeploy both services"
+      ]
+    },
+    {
+      "step": 6,
+      "title": "Test Deployment", 
+      "commands": [
+        "./check-deployment.sh [vercel-url] [render-url]"
+      ]
+    }
+  ],
+  "common_issues": {
+    "cors_error": {
+      "solution": "Check CLIENT_URL environment variable in backend",
+      "documentation": "./DEPLOYMENT.md#cors-error"
+    },
+    "api_not_found": {
+      "solution": "Check VITE_API_URL environment variable in frontend",
+      "documentation": "./DEPLOYMENT.md#api-not-found"
+    },
+    "server_sleeping": {
+      "solution": "First request takes ~30s on free tier after 15min idle",
+      "documentation": "./DEPLOYMENT.md#server-sleep-render-free-tier"
+    },
+    "database_connection": {
+      "solution": "Verify MongoDB connection string and network access",
+      "documentation": "./DEPLOYMENT.md#database-connection-error"
+    }
+  }
+}
