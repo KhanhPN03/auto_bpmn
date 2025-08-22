@@ -25,8 +25,12 @@ const optimizationSchema = Joi.object({
 // Generate BPMN from text description
 const generateFromText = async (req, res) => {
   try {
+    console.log('🚀 Starting BPMN generation from text...');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
     const { error, value } = textGenerationSchema.validate(req.body);
     if (error) {
+      console.log('❌ Validation error:', error.details[0].message);
       return res.status(400).json({
         success: false,
         message: error.details[0].message
@@ -34,14 +38,20 @@ const generateFromText = async (req, res) => {
     }
 
     const { description, title, industry } = value;
+    console.log(`📝 Processing: "${title}" for ${industry} industry`);
 
     // Call AI service to generate BPMN
+    console.log('🤖 Calling AI service...');
     const bpmnXml = await aiService.generateBpmnFromText(description, industry);
+    console.log('✅ AI service returned BPMN XML');
 
     // Validate and clean BPMN
+    console.log('🔍 Validating BPMN...');
     const validatedBpmn = await bpmnService.validateBpmn(bpmnXml);
+    console.log('✅ BPMN validated successfully');
 
     // Save to database
+    console.log('💾 Saving to database...');
     const process = new Process({
       title,
       description,
@@ -73,6 +83,13 @@ const generateFromText = async (req, res) => {
 
   } catch (error) {
     console.error('Error generating BPMN from text:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      code: error.code
+    });
     
     // Specific error handling for rate limiting
     if (error.message.includes('rate limit') || error.response?.status === 429) {
@@ -91,11 +108,27 @@ const generateFromText = async (req, res) => {
       });
     }
     
+    // Handle OpenAI API key issues
+    if (error.response?.status === 401 || error.message.includes('Invalid API key')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid API key. Please check your OpenAI API configuration.'
+      });
+    }
+    
+    // Handle MongoDB connection issues
+    if (error.name === 'MongoNetworkError' || error.name === 'MongooseError') {
+      return res.status(503).json({
+        success: false,
+        message: 'Database connection error. Please try again later.'
+      });
+    }
+    
     // General server error
     res.status(500).json({
       success: false,
       message: 'Failed to generate BPMN diagram',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };

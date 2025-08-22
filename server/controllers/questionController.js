@@ -3,15 +3,20 @@ const QuestionSet = require('../models/QuestionSet');
 // Get BPMN building questions
 const getBpmnQuestions = async (req, res) => {
   try {
+    console.log('📝 Fetching BPMN questions...');
+    
     let questionSet = await QuestionSet.findOne({ 
       type: 'bpmn', 
       isActive: true 
     }).sort({ version: -1 });
 
     if (!questionSet) {
+      console.log('📝 No BPMN questions found, creating default set...');
       // Create default BPMN question set if none exists
       questionSet = await createDefaultBpmnQuestions();
     }
+
+    console.log('✅ BPMN questions loaded:', questionSet ? questionSet.questions.length : 0, 'questions');
 
     res.json({
       success: true,
@@ -19,10 +24,12 @@ const getBpmnQuestions = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching BPMN questions:', error);
+    console.error('❌ Error fetching BPMN questions:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch BPMN questions'
+      message: 'Failed to fetch BPMN questions',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -31,6 +38,7 @@ const getBpmnQuestions = async (req, res) => {
 const getIndustryQuestions = async (req, res) => {
   try {
     const { industry } = req.params;
+    console.log(`📝 Fetching questions for industry: ${industry}`);
     
     let questionSet = await QuestionSet.findOne({ 
       type: 'industry', 
@@ -39,9 +47,12 @@ const getIndustryQuestions = async (req, res) => {
     }).sort({ version: -1 });
 
     if (!questionSet) {
+      console.log(`📝 No ${industry} questions found, creating default set...`);
       // Create default industry question set if none exists
       questionSet = await createDefaultIndustryQuestions(industry.toLowerCase());
     }
+
+    console.log(`✅ ${industry} questions loaded:`, questionSet ? questionSet.questions.length : 0, 'questions');
 
     res.json({
       success: true,
@@ -49,10 +60,12 @@ const getIndustryQuestions = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching industry questions:', error);
+    console.error(`❌ Error fetching ${req.params.industry} questions:`, error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch industry questions'
+      message: `Failed to fetch ${req.params.industry} questions`,
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };

@@ -5,6 +5,15 @@ class AIService {
     this.openaiApiKey = process.env.OPENAI_API_KEY;
     this.huggingfaceApiKey = process.env.HUGGINGFACE_API_KEY;
     this.basePrompts = this.initializePrompts();
+    
+    // Log API key status for debugging
+    console.log('🔑 AI Service initialized:');
+    console.log('  OpenAI API Key:', this.openaiApiKey ? 'Configured' : 'Missing');
+    console.log('  HuggingFace API Key:', this.huggingfaceApiKey ? 'Configured' : 'Missing');
+    
+    if (!this.openaiApiKey && !this.huggingfaceApiKey) {
+      console.error('⚠️  WARNING: No AI API keys configured! Service will use fallback templates only.');
+    }
   }
 
   initializePrompts() {
