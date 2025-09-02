@@ -43,21 +43,6 @@
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-### 🎯 Deploy in 5 Minutes
-1. **Frontend**: Deploy to Vercel (Unlimited free static hosting)
-2. **Backend**: Deploy to Render (750 hours/month free)  
-3. **Database**: MongoDB Atlas (512MB free tier)
-
-👉 **[📖 Complete Deployment Guide](./DEPLOYMENT.md)** - Chi tiết từng bước với Free Tier
-
-```bash
-# Health check your deployment
-./check-deployment.sh [vercel-url] [render-url]
-```
-
-**🏆 Total Cost: $0/month** (Free tier cho production app!)
-
----
 
 ## 🎯 Features
 
@@ -446,7 +431,7 @@ Special thanks to:
 
 *Transforming business processes through intelligent automation*
 
-**[⭐ Star this project](https://github.com/laza/auto-bpmn) • [🍴 Fork it](https://github.com/laza/auto-bpmn/fork) • [📢 Share it](https://twitter.com/intent/tweet?text=Check%20out%20Auto%20BPMN%20-%20AI-powered%20process%20modeling%20platform%20by%20@LaziDev&url=https://github.com/laza/auto-bpmn)**
+**[⭐ Star this project](https://github.com/laza/auto-bpmn) • [🍴 Fork it](https://github.com/laza/auto-bpmn/fork)**
 
 </div>
    ```bash
