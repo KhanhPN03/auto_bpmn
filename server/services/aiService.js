@@ -18,19 +18,24 @@ class AIService {
 
   initializePrompts() {
     return {
-      bpmnGeneration: `You are a BPMN expert. Generate a valid BPMN 2.0 XML diagram based on the process description.
+      bpmnGeneration: `You are a BPMN expert. Generate a comprehensive and detailed BPMN 2.0 XML diagram based on the process description.
 
-Rules:
+IMPORTANT REQUIREMENTS:
 1. Always start with a start event and end with an end event
-2. Use proper BPMN elements (tasks, gateways, events)
-3. Include proper flow connections
-4. Add meaningful labels and IDs
-5. Return only valid XML, no explanations
+2. Create multiple detailed tasks for each major step mentioned in the description
+3. Include decision gateways where appropriate (exclusive, parallel, inclusive)
+4. Add intermediate events where needed (message, timer, error events)
+5. Use proper BPMN elements with meaningful names and IDs
+6. Create realistic process flows with proper sequence flows
+7. Include lanes/pools if multiple actors are involved
+8. Add annotations or text annotations for clarity
+9. Ensure the process has at least 5-10 activities for realistic complexity
+10. Return only valid BPMN 2.0 XML, no explanations
 
 Process Description: {description}
 Industry Context: {industry}
 
-Generate the BPMN XML:`,
+Generate a detailed BPMN XML with multiple tasks, decision points, and proper flow logic:`,
 
       bpmnOptimization: `You are a process optimization expert. Analyze the current BPMN process and suggest improvements.
 
@@ -133,14 +138,14 @@ Format your response as JSON:
           messages: [
             {
               role: 'system',
-              content: 'You are a BPMN expert that generates valid BPMN 2.0 XML.'
+              content: 'You are a BPMN expert that generates detailed, valid BPMN 2.0 XML diagrams with multiple tasks, decision points, and realistic process flows.'
             },
             {
               role: 'user',
               content: prompt
             }
           ],
-          max_tokens: 2000,
+          max_tokens: 4000,
           temperature: 0.3
         }, {
           headers: {
@@ -201,10 +206,67 @@ Format your response as JSON:
   }
 
   generateBasicBpmn(description, industry) {
-    // Simple but effective BPMN generator
+    // Enhanced BPMN generator with more realistic process flows
     const processId = 'Process_' + Date.now();
     const tasks = this.extractTasksFromText(description);
     
+    // Add decision points and additional elements based on industry
+    const elements = [];
+    
+    // Start event
+    elements.push({
+      type: 'startEvent',
+      id: 'StartEvent_1',
+      name: 'Start'
+    });
+    
+    // Process tasks with potential decision points
+    for (let i = 0; i < tasks.length; i++) {
+      const task = tasks[i];
+      
+      // Add the main task
+      elements.push({
+        type: 'task',
+        id: `Task_${i + 1}`,
+        name: task
+      });
+      
+      // Add decision points for certain scenarios
+      if (task.toLowerCase().includes('check') || task.toLowerCase().includes('verify') || 
+          task.toLowerCase().includes('review') || task.toLowerCase().includes('approve')) {
+        elements.push({
+          type: 'exclusiveGateway',
+          id: `Gateway_${i + 1}`,
+          name: 'Decision'
+        });
+        
+        // Add alternative path
+        elements.push({
+          type: 'task',
+          id: `Task_${i + 1}_alt`,
+          name: `Handle ${task.replace(/check|verify|review|approve/i, 'rejection')}`
+        });
+      }
+      
+      // Add notification tasks for completion steps
+      if (task.toLowerCase().includes('complete') || task.toLowerCase().includes('finish') || 
+          task.toLowerCase().includes('deliver') || task.toLowerCase().includes('send')) {
+        elements.push({
+          type: 'task',
+          id: `Task_${i + 1}_notify`,
+          name: `Send ${task.toLowerCase().includes('deliver') ? 'delivery' : 'completion'} notification`
+        });
+      }
+    }
+    
+    // End event
+    elements.push({
+      type: 'endEvent',
+      id: 'EndEvent_1',
+      name: 'End'
+    });
+    
+    // Generate XML
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
@@ -212,31 +274,52 @@ Format your response as JSON:
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI" 
                   id="Definitions_1" 
                   targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="${processId}" isExecutable="true">
-    <bpmn:startEvent id="StartEvent_1" name="Start">
-      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+  <bpmn:process id="${processId}" isExecutable="true">`;
+
+    // Add elements
+    elements.forEach((element, index) => {
+      const hasIncoming = index > 0;
+      const hasOutgoing = index < elements.length - 1;
+      const incomingFlow = hasIncoming ? `Flow_${index}` : '';
+      const outgoingFlow = hasOutgoing ? `Flow_${index + 1}` : '';
+      
+      switch (element.type) {
+        case 'startEvent':
+          xml += `
+    <bpmn:startEvent id="${element.id}" name="${this.sanitizeForXml(element.name)}">
+      ${hasOutgoing ? `<bpmn:outgoing>${outgoingFlow}</bpmn:outgoing>` : ''}
     </bpmn:startEvent>`;
-
-    // Add tasks
-    for (let i = 0; i < tasks.length; i++) {
-      xml += `
-    <bpmn:task id="Task_${i + 1}" name="${this.sanitizeForXml(tasks[i])}">
-      <bpmn:incoming>Flow_${i + 1}</bpmn:incoming>
-      <bpmn:outgoing>Flow_${i + 2}</bpmn:outgoing>
+          break;
+        case 'task':
+          xml += `
+    <bpmn:task id="${element.id}" name="${this.sanitizeForXml(element.name)}">
+      ${hasIncoming ? `<bpmn:incoming>${incomingFlow}</bpmn:incoming>` : ''}
+      ${hasOutgoing ? `<bpmn:outgoing>${outgoingFlow}</bpmn:outgoing>` : ''}
     </bpmn:task>`;
-    }
-
-    xml += `
-    <bpmn:endEvent id="EndEvent_1" name="End">
-      <bpmn:incoming>Flow_${tasks.length + 1}</bpmn:incoming>
+          break;
+        case 'exclusiveGateway':
+          xml += `
+    <bpmn:exclusiveGateway id="${element.id}" name="${this.sanitizeForXml(element.name)}">
+      ${hasIncoming ? `<bpmn:incoming>${incomingFlow}</bpmn:incoming>` : ''}
+      ${hasOutgoing ? `<bpmn:outgoing>${outgoingFlow}</bpmn:outgoing>` : ''}
+    </bpmn:exclusiveGateway>`;
+          break;
+        case 'endEvent':
+          xml += `
+    <bpmn:endEvent id="${element.id}" name="${this.sanitizeForXml(element.name)}">
+      ${hasIncoming ? `<bpmn:incoming>${incomingFlow}</bpmn:incoming>` : ''}
     </bpmn:endEvent>`;
+          break;
+      }
+    });
 
-    // Add flows
-    for (let i = 0; i <= tasks.length; i++) {
-      const sourceRef = i === 0 ? 'StartEvent_1' : `Task_${i}`;
-      const targetRef = i === tasks.length ? 'EndEvent_1' : `Task_${i + 1}`;
+    // Add sequence flows
+    for (let i = 0; i < elements.length - 1; i++) {
+      const current = elements[i];
+      const next = elements[i + 1];
+      
       xml += `
-    <bpmn:sequenceFlow id="Flow_${i + 1}" sourceRef="${sourceRef}" targetRef="${targetRef}" />`;
+    <bpmn:sequenceFlow id="Flow_${i + 1}" sourceRef="${current.id}" targetRef="${next.id}" />`;
     }
 
     xml += `
@@ -244,44 +327,47 @@ Format your response as JSON:
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="${processId}">`;
 
-    // Add shapes
+    // Add shapes with better positioning
     let xPos = 180;
-    const yPos = 100;
-    const spacing = 200;
+    let yPos = 100;
+    const spacing = 250;
 
-    // Start event
-    xml += `
-      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+    elements.forEach((element, index) => {
+      switch (element.type) {
+        case 'startEvent':
+        case 'endEvent':
+          xml += `
+      <bpmndi:BPMNShape id="${element.id}_di" bpmnElement="${element.id}">
         <dc:Bounds x="${xPos - 18}" y="${yPos - 18}" width="36" height="36" />
       </bpmndi:BPMNShape>`;
-    xPos += spacing;
-
-    // Tasks
-    for (let i = 0; i < tasks.length; i++) {
-      xml += `
-      <bpmndi:BPMNShape id="Activity_Task_${i + 1}_di" bpmnElement="Task_${i + 1}">
-        <dc:Bounds x="${xPos - 50}" y="${yPos - 40}" width="100" height="80" />
+          break;
+        case 'task':
+          xml += `
+      <bpmndi:BPMNShape id="${element.id}_di" bpmnElement="${element.id}">
+        <dc:Bounds x="${xPos - 60}" y="${yPos - 40}" width="120" height="80" />
       </bpmndi:BPMNShape>`;
+          break;
+        case 'exclusiveGateway':
+          xml += `
+      <bpmndi:BPMNShape id="${element.id}_di" bpmnElement="${element.id}" isMarkerVisible="true">
+        <dc:Bounds x="${xPos - 25}" y="${yPos - 25}" width="50" height="50" />
+      </bpmndi:BPMNShape>`;
+          break;
+      }
+      
       xPos += spacing;
-    }
-
-    // End event
-    xml += `
-      <bpmndi:BPMNShape id="Event_EndEvent_1_di" bpmnElement="EndEvent_1">
-        <dc:Bounds x="${xPos - 18}" y="${yPos - 18}" width="36" height="36" />
-      </bpmndi:BPMNShape>`;
+    });
 
     // Add edges
-    xPos = 180;
-    for (let i = 0; i <= tasks.length; i++) {
-      const xStart = xPos + (i === 0 ? 18 : 50);
-      const xEnd = xPos + spacing - (i === tasks.length ? 18 : 50);
+    for (let i = 0; i < elements.length - 1; i++) {
+      const fromX = 180 + (i * spacing);
+      const toX = 180 + ((i + 1) * spacing);
+      
       xml += `
       <bpmndi:BPMNEdge id="Flow_${i + 1}_di" bpmnElement="Flow_${i + 1}">
-        <di:waypoint x="${xStart}" y="${yPos}" />
-        <di:waypoint x="${xEnd}" y="${yPos}" />
+        <di:waypoint x="${fromX}" y="${yPos}" />
+        <di:waypoint x="${toX}" y="${yPos}" />
       </bpmndi:BPMNEdge>`;
-      xPos += spacing;
     }
 
     xml += `
@@ -294,40 +380,127 @@ Format your response as JSON:
 
   extractTasksFromText(description) {
     const tasks = [];
-    const sentences = description.split(/[.!?]/).filter(s => s.trim().length > 0);
     
-    for (const sentence of sentences) {
-      const clean = sentence.trim().toLowerCase();
+    // Split by common separators and clean up
+    const parts = description.split(/[,;]|(\s+and\s+)|(\s+then\s+)|(\s+to\s+)/i)
+      .map(part => part ? part.trim() : '')
+      .filter(part => part.length > 0);
+    
+    // Common action verbs that indicate tasks
+    const actionVerbs = [
+      'verify', 'check', 'process', 'ship', 'send', 'receive', 'create', 'update',
+      'validate', 'confirm', 'approve', 'reject', 'assign', 'deliver', 'pack',
+      'prepare', 'review', 'analyze', 'generate', 'complete', 'schedule', 'notify',
+      'calculate', 'assess', 'determine', 'ensure', 'perform', 'execute', 'handle',
+      'manage', 'organize', 'coordinate', 'monitor', 'track', 'record', 'document',
+      'submit', 'forward', 'transfer', 'allocate', 'distribute', 'collect', 'gather'
+    ];
+    
+    // Process each part to extract tasks
+    for (const part of parts) {
+      const words = part.toLowerCase().split(/\s+/);
       
-      // Look for task indicators
-      if (clean.includes('task') || clean.includes('receive') || clean.includes('check') || 
-          clean.includes('prepare') || clean.includes('pack') || clean.includes('assign') || 
-          clean.includes('deliver') || clean.includes('send') || clean.includes('notify') ||
-          clean.includes('moves to') || clean.includes('verify')) {
+      // Look for action verbs at the start or after common words
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
         
-        let taskName = sentence.trim()
-          .replace(/^(the\s+|next,?\s+|then,?\s+|first,?\s+|process\s+moves\s+to\s+)/i, '')
-          .replace(/\s+(task|step|is performed|where|performed by).*/gi, '')
-          .replace(/[,].*/g, '');
-        
-        taskName = taskName.trim();
-        if (taskName.length > 0) {
-          taskName = taskName.charAt(0).toUpperCase() + taskName.slice(1);
-          if (taskName.length > 50) taskName = taskName.substring(0, 47) + '...';
+        if (actionVerbs.includes(word)) {
+          // Extract the task phrase starting from this verb
+          let taskStart = i;
           
-          if (!tasks.some(t => t.toLowerCase() === taskName.toLowerCase())) {
-            tasks.push(taskName);
+          // Include preceding words if they're part of the task context
+          if (i > 0 && ['we', 'to', 'need', 'must', 'will', 'should'].includes(words[i-1])) {
+            taskStart = i - 1;
+          }
+          
+          // Find the end of this task phrase
+          let taskEnd = words.length;
+          for (let j = i + 1; j < words.length; j++) {
+            if (actionVerbs.includes(words[j]) || 
+                ['then', 'and', 'after', 'before', 'next', 'finally'].includes(words[j])) {
+              taskEnd = j;
+              break;
+            }
+          }
+          
+          // Extract and clean the task
+          let taskPhrase = words.slice(taskStart, taskEnd).join(' ');
+          taskPhrase = taskPhrase
+            .replace(/^(we\s+|need\s+to\s+|must\s+|will\s+|should\s+)/i, '')
+            .replace(/\s+(task|step|process|activity)$/i, '')
+            .trim();
+          
+          if (taskPhrase.length > 3) {
+            // Capitalize first letter
+            taskPhrase = taskPhrase.charAt(0).toUpperCase() + taskPhrase.slice(1);
+            
+            // Limit length
+            if (taskPhrase.length > 50) {
+              taskPhrase = taskPhrase.substring(0, 47) + '...';
+            }
+            
+            // Avoid duplicates
+            if (!tasks.some(t => t.toLowerCase().includes(taskPhrase.toLowerCase().substring(0, 10)))) {
+              tasks.push(taskPhrase);
+            }
+          }
+          break; // Move to next part
+        }
+      }
+    }
+    
+    // If we found very few tasks, try a more aggressive approach
+    if (tasks.length <= 1) {
+      // Split by common sentence patterns
+      const sentences = description.split(/[.!?]/).filter(s => s.trim().length > 0);
+      
+      for (const sentence of sentences) {
+        const clean = sentence.trim();
+        
+        // Look for task patterns
+        const taskPatterns = [
+          /(?:we\s+)?(?:need\s+to\s+|must\s+|will\s+|should\s+)?(verify|check|process|ship|send|receive|create|update|validate|confirm|approve|reject|assign|deliver|pack|prepare|review|analyze|generate|complete|schedule|notify|calculate|assess|determine|ensure|perform|execute|handle|manage|organize|coordinate|monitor|track|record|document|submit|forward|transfer|allocate|distribute|collect|gather)\s+[^,.]*/gi,
+          /(?:then\s+|next\s+|after\s+that\s+)?(verify|check|process|ship|send|receive|create|update|validate|confirm|approve|reject|assign|deliver|pack|prepare|review|analyze|generate|complete|schedule|notify|calculate|assess|determine|ensure|perform|execute|handle|manage|organize|coordinate|monitor|track|record|document|submit|forward|transfer|allocate|distribute|collect|gather)\s+[^,.]*/gi
+        ];
+        
+        for (const pattern of taskPatterns) {
+          const matches = clean.match(pattern);
+          if (matches) {
+            for (const match of matches) {
+              let taskName = match
+                .replace(/^(we\s+|need\s+to\s+|must\s+|will\s+|should\s+|then\s+|next\s+|after\s+that\s+)/i, '')
+                .trim();
+              
+              if (taskName.length > 3) {
+                taskName = taskName.charAt(0).toUpperCase() + taskName.slice(1);
+                if (taskName.length > 50) taskName = taskName.substring(0, 47) + '...';
+                
+                if (!tasks.some(t => t.toLowerCase().includes(taskName.toLowerCase().substring(0, 10)))) {
+                  tasks.push(taskName);
+                }
+              }
+            }
           }
         }
       }
     }
 
-    // Default tasks if none found
+    // Default tasks if still none found
     if (tasks.length === 0) {
-      tasks.push('Receive Order', 'Check Order Details', 'Prepare Food', 'Pack Order', 'Assign Delivery Driver', 'Deliver Order');
+      // Extract nouns that might represent steps
+      const words = description.toLowerCase().match(/\b\w+\b/g) || [];
+      if (words.includes('order')) {
+        tasks.push('Receive Order', 'Process Order', 'Fulfill Order');
+      } else if (words.includes('patient')) {
+        tasks.push('Register Patient', 'Conduct Examination', 'Provide Treatment');
+      } else if (words.includes('loan')) {
+        tasks.push('Review Application', 'Assess Risk', 'Approve Loan');
+      } else {
+        tasks.push('Start Process', 'Complete Activity', 'Finish Process');
+      }
     }
 
-    return tasks.slice(0, 8); // Limit to reasonable number
+    return tasks.slice(0, 10); // Limit to reasonable number
   }
 
   generateBasicOptimization(currentBpmn) {
